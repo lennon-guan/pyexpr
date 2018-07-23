@@ -21,7 +21,6 @@ def _parse_valuelist(lexer):
     vs = []
     vs.append(_parse_expr(lexer))
     while lexer.cur_ttype == TOKEN_COMMA:
-        print(vs)
         lexer.next()
         vs.append(_parse_expr(lexer))
     if lexer.cur_ttype != TOKEN_RB:
