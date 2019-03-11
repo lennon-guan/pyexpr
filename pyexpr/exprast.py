@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 from __future__ import division
+import ast
 
 
 class Context(object):
@@ -23,6 +24,16 @@ class Num(Node):
 
     def display(self, indent):
         return '%s%s' % (indent, self._num)
+
+class Str(Node):
+    def __init__(self, s):
+        self._s = ast.literal_eval(s)
+
+    def result(self, ctx):
+        return self._s
+
+    def display(self, indent):
+        return '%s%s' % (indent, self._s)
 
 class Var(Node):
     def __init__(self, var):
@@ -97,7 +108,41 @@ class Division(_BinOp):
 class Pow(_BinOp):
     op = classmethod(lambda cls, a, b: a ** b)
 
+class And(_BinOp):
+    op = classmethod(lambda cls, a, b: a and b)
 
+class Or(_BinOp):
+    op = classmethod(lambda cls, a, b: a or b)
+
+class Equal(_BinOp):
+    op = classmethod(lambda cls, a, b: a == b)
+
+class NotEqual(_BinOp):
+    op = classmethod(lambda cls, a, b: a != b)
+
+class GreaterThan(_BinOp):
+    op = classmethod(lambda cls, a, b: a > b)
+
+class GreaterEqual(_BinOp):
+    op = classmethod(lambda cls, a, b: a >= b)
+
+class LessThan(_BinOp):
+    op = classmethod(lambda cls, a, b: a < b)
+
+class LessEqual(_BinOp):
+    op = classmethod(lambda cls, a, b: a <= b)
+
+class Not(Node):
+    def __init__(self, expr):
+        self._expr = expr
+
+    def result(self, ctx):
+        return not self._expr.result(ctx)
+
+    def display(self, indent):
+        return '%s(not\n%s\n%s),' % (indent, self._expr.display(indent + '  '), indent)
+        
+ 
 class ValueList(Node):
     def __init__(self, *vs):
         self._vs = vs

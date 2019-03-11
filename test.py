@@ -45,4 +45,19 @@ assert_eval('abs(a)', 10, a=10)
 assert_eval('abs(a)', 10, a=-10)
 assert_eval('abs(a) + b', 10, a=-3, b=7)
 
+for v in range(30):
+    assert_eval('v <= 20 and v-10 >= 0', v <= 20 and v >= 10, v=v)
+    assert_eval('v <= 20 and not v-10 < 0', v <= 20 and v >= 10, v=v)
+
+assert_eval('not f() == 4', True, f=lambda: 3)
+
+def index_of(v, *seq):
+    try:
+        return seq.index(v)
+    except ValueError:
+        return -1
+
+assert_eval('index_of("python", "c++", "python", "java")', 1, index_of=index_of)
+assert_eval('index_of("r\\\"uby", "c++", "python", "java")', -1, index_of=index_of)
+
 print('All test cases passed!')

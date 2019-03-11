@@ -7,20 +7,31 @@ import string
 TOKEN_INV   = -1
 TOKEN_NONE  = 0
 TOKEN_NUM   = 1
-TOKEN_PLUS  = 2
-TOKEN_MINUS = 3
-TOKEN_TIMES = 4
-TOKEN_DIV   = 5
-TOKEN_POW   = 6
-TOKEN_LB    = 8
-TOKEN_RB    = 9
-TOKEN_VAR   = 10
-TOKEN_COMMA = 11
+TOKEN_STR   = 2
+TOKEN_PLUS  = 3
+TOKEN_MINUS = 4
+TOKEN_TIMES = 5
+TOKEN_DIV   = 6
+TOKEN_POW   = 7
+TOKEN_LB    = 9
+TOKEN_RB    = 10
+TOKEN_VAR   = 11
+TOKEN_COMMA = 12
+TOKEN_AND   = 13
+TOKEN_OR    = 14
+TOKEN_NOT   = 15
+TOKEN_EQ    = 16
+TOKEN_NE    = 17
+TOKEN_GT    = 18
+TOKEN_GE    = 19
+TOKEN_LT    = 20
+TOKEN_LE    = 21
 
 TOKEN_NAMES = {
     TOKEN_INV   : 'TOKEN_INV',
     TOKEN_NONE  : 'TOKEN_NONE',
     TOKEN_NUM   : 'TOKEN_NUM',
+    TOKEN_STR   : 'TOKEN_STR',
     TOKEN_PLUS  : 'TOKEN_PLUS',
     TOKEN_MINUS : 'TOKEN_MINUS',
     TOKEN_TIMES : 'TOKEN_TIMES',
@@ -30,6 +41,15 @@ TOKEN_NAMES = {
     TOKEN_RB    : 'TOKEN_RB',
     TOKEN_VAR   : 'TOKEN_VAR',
     TOKEN_COMMA : 'TOKEN_COMMA',
+    TOKEN_AND   : 'TOKEN_AND',
+    TOKEN_OR    : 'TOKEN_OR',
+    TOKEN_NOT   : 'TOKEN_NOT',
+    TOKEN_EQ    : 'TOKEN_EQ',
+    TOKEN_NE    : 'TOKEN_NE',
+    TOKEN_GT    : 'TOKEN_GT',
+    TOKEN_GE    : 'TOKEN_GE',
+    TOKEN_LT    : 'TOKEN_LT',
+    TOKEN_LE    : 'TOKEN_LE',
 }
 
 _SPACES = (' ', '\t')
@@ -108,12 +128,32 @@ class Lexer(object):
                 ntype = float
             self._cur_token = (TOKEN_NUM, ntype(self._es[start:self._offset]))
             return True
+        if ch == '"':
+            start = self._offset
+            while True:
+                self._offset += 1
+                ch = self.cur
+                if ch == '"':
+                    self._offset += 1
+                    break
+                if ch == '\\':
+                    self._offset += 1
+            self._cur_token = (TOKEN_STR, self._es[start:self._offset])
+            return True
         if ch in string.ascii_letters:
             start = self._offset
             self._offset += 1
             while self.cur in self.var_chars:
                 self._offset += 1
-            self._cur_token = (TOKEN_VAR, self._es[start:self._offset])
+            token_literal = self._es[start:self._offset]
+            if token_literal == 'and':
+                self._cur_token = (TOKEN_AND, token_literal)
+            elif token_literal == 'or':
+                self._cur_token = (TOKEN_OR, token_literal)
+            elif token_literal == 'not':
+                self._cur_token = (TOKEN_NOT, token_literal)
+            else:
+                self._cur_token = (TOKEN_VAR, token_literal)
             return True
         if ch == '*':
             self._offset += 1
@@ -123,6 +163,34 @@ class Lexer(object):
             else:
                 self._cur_token = (TOKEN_TIMES, '*')
             return True
+        if ch == '=':
+            self._offset += 1
+            if self.cur == '=':
+                self._cur_token = (TOKEN_EQ, '==')
+                self._offset += 1
+                return
+        if ch == '!':
+            self._offset += 1
+            if self.cur == '=':
+                self._cur_token = (TOKEN_NE, '!=')
+                self._offset += 1
+                return
+        if ch == '>':
+            self._offset += 1
+            if self.cur == '=':
+                self._cur_token = (TOKEN_GE, '>=')
+                self._offset += 1
+            else:
+                self._cur_token = (TOKEN_GT, '>')
+            return
+        if ch == '<':
+            self._offset += 1
+            if self.cur == '=':
+                self._cur_token = (TOKEN_LE, '<=')
+                self._offset += 1
+            else:
+                self._cur_token = (TOKEN_LT, '<')
+            return
         self._cur_token = (TOKEN_INV, '')
         return False
 

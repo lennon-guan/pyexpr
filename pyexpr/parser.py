@@ -12,17 +12,19 @@ class ParseError(Exception):
         msg = '%s, ttype: %s, len %d offset %d' % (
             lexer._es,
             TOKEN_NAMES[lexer.cur_ttype],
-            lexer._offset,
             lexer._len,
+            lexer._offset,
         )
         super(ParseError, self).__init__(msg)
 
 def _parse_valuelist(lexer):
     vs = []
-    vs.append(_parse_expr(lexer))
+    if lexer.cur_ttype == TOKEN_RB:
+        return ValueList()
+    vs.append(_parse_logic_expr(lexer))
     while lexer.cur_ttype == TOKEN_COMMA:
         lexer.next()
-        vs.append(_parse_expr(lexer))
+        vs.append(_parse_logic_expr(lexer))
     if lexer.cur_ttype != TOKEN_RB:
         raise ParseError(lexer)
     return ValueList(*vs)
@@ -32,12 +34,15 @@ def _parse_factor(lexer):
     if ttype == TOKEN_LB:
         if not lexer.next():
             raise ParseError(lexer)
-        factor = _parse_expr(lexer)
+        factor = _parse_logic_expr(lexer)
         if lexer.cur_ttype != TOKEN_RB:
             raise ParseError(lexer)
         lexer.next()
     elif ttype == TOKEN_NUM:
         factor = Num(tval)
+        lexer.next()
+    elif ttype == TOKEN_STR:
+        factor = Str(tval)
         lexer.next()
     elif ttype == TOKEN_VAR:
         factor = Var(tval)
@@ -94,10 +99,50 @@ def _parse_expr(lexer):
     return expr
 
 
+_cmp_ops = {
+    TOKEN_EQ: Equal,
+    TOKEN_NE: NotEqual,
+    TOKEN_GT: GreaterThan,
+    TOKEN_GE: GreaterEqual,
+    TOKEN_LT: LessThan,
+    TOKEN_LE: LessEqual,
+}
+
+def _parse_cmp_expr(lexer):
+    if lexer.cur_ttype == TOKEN_NOT:
+        if not lexer.next():
+            raise ParseError(lexer)
+        return Not(_parse_cmp_expr(lexer))
+    expr = _parse_expr(lexer)
+    ttype, _ = lexer.cur_token
+    if ttype not in _cmp_ops:
+        return expr
+    if not lexer.next():
+        raise ParseError(lexer)
+    n1 = expr
+    n2 = _parse_expr(lexer)
+    return _cmp_ops[ttype](n1, n2)
+
+_logic_ops = {
+    TOKEN_AND: And,
+    TOKEN_OR: Or,
+}
+
+def _parse_logic_expr(lexer):
+    expr = _parse_cmp_expr(lexer)
+    ttype, _ = lexer.cur_token
+    if ttype not in _logic_ops:
+        return expr
+    if not lexer.next():
+        raise ParseError(lexer)
+    n1 = expr
+    n2 = _parse_cmp_expr(lexer)
+    return _logic_ops[ttype](n1, n2)
+
 def parse(lexer):
     if not lexer.next():
         return None
-    r = _parse_expr(lexer)
+    r = _parse_logic_expr(lexer)
     if lexer.cur_ttype != TOKEN_NONE:
         raise ParseError(lexer)
     return r

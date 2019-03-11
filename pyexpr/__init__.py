@@ -14,3 +14,6 @@ def evaluate(expr, ctx=None, variables=None, builtins=None):
     if ctx is None:
         ctx = Context(variables=variables, builtins=builtins)
     return e.result(ctx)
+
+def simple_eval(expr, **vars):
+    return evaluate(expr, variables=vars)
